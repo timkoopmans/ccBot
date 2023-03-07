@@ -1,0 +1,5 @@
+/.env
+/ccbot.iml
+/kube/dashboard.yml
+/posts_replied_to.txt
+/praw.ini
