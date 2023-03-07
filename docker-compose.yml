@@ -1,0 +1,10 @@
+version: "3.9"
+services:
+  bot:
+    build: .
+    environment:
+      - OPENAI_API_KEY
+      - TZ
+      - PYTHONUNBUFFERED
+    volumes:
+      - ${PWD}/posts_replied_to.txt:/code/posts_replied_to.txt
