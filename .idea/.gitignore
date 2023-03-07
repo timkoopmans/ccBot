@@ -6,7 +6,5 @@
 # Datasource local storage ignored files
 /dataSources/
 /dataSources.local.xml
-praw.ini
 *.xml
 *.iml
-/posts_replied_to.txt
