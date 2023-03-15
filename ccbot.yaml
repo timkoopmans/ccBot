@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ccbot
+spec:
+  containers:
+    - name: ccbot
+      image: timkoopmans/ccbot:latest
+      imagePullPolicy: Never
+      env:
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: ccbot-secrets
+              key: openai-api-key
+        - name: TZ
+          value: Australia/Melbourne
+        - name: PYTHONUNBUFFERED
+          value: "1"
+      volumeMounts:
+        - name: ccbot-storage
+          mountPath: /data
+  volumes:
+    - name: ccbot-storage
+      emptyDir: { }

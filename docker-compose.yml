@@ -8,3 +8,4 @@ services:
       - PYTHONUNBUFFERED
     volumes:
       - ${PWD}/posts_replied_to.txt:/code/posts_replied_to.txt
+    image: timkoopmans/ccbot
