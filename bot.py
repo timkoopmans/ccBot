@@ -27,7 +27,7 @@ def main():
                 process_submission(submission)
                 with open("posts_replied_to.txt", "a") as f:
                     f.write(submission.id + "\n")
-                sleep(randint(600, 800))
+                sleep(randint(700, 800))
                 # sleep(randint(3, 9))
 
 
