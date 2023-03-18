@@ -1,5 +1,6 @@
 import datetime
 import os
+import re
 from random import randint
 from time import sleep
 
@@ -31,15 +32,28 @@ def main():
 
 
 def process_submission(submission):
-    title = submission.title.lower()
-    print("Title: ", title)
-    prompt = "write a short cynical yet reassuring reply in less than 30 words to '{}' without using the words 'Oh', " \
-             "'Wow', " \
-             "and 'Great'".format(title)
-    completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=[{"role": "user", "content": prompt}])
-    reply = completion.choices[0].message.content.replace('"', '')
-    print("Reply: ", reply.strip())
-    submission.reply(reply)
+    title = submission.title.strip()
+    for top_level_comment in submission.comments:
+        if top_level_comment.body == "[deleted]":
+            continue
+        else:
+            comment = " ".join(top_level_comment.body.split())
+            print("Title:", title)
+            print("    -:", comment)
+            prompt = "write a short slightly cynical yet reassuring reply in less than 30 words to the comment '{}' in the " \
+                     "context of the title '{}' without using the words 'Oh', " \
+                     "'Wow', " \
+                     "and 'Great'".format(comment, title)
+            completion = openai.ChatCompletion.create(model="gpt-3.5-turbo",
+                                                      messages=[{"role": "user", "content": prompt}])
+            reply = completion.choices[0].message.content.replace('"', '').strip()
+            if re.search('AI|language model', reply):
+                print("Reply leaks AI usage")
+                return
+            print("   --:", reply)
+            print()
+            top_level_comment.reply(reply)
+            break
 
 
 if __name__ == "__main__":
