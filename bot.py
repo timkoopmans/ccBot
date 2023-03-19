@@ -20,8 +20,8 @@ def main():
     subreddit = reddit.subreddit("CryptoCurrency")
     for submission in subreddit.stream.submissions():
         timestamp = datetime.datetime.now().time()
-        start = datetime.time(7)
-        end = datetime.time(17)
+        start = datetime.time(13)
+        end = datetime.time(23)
         if start <= timestamp <= end:
             if submission.id not in posts_replied_to:
                 process_submission(submission)
