@@ -34,7 +34,7 @@ def main():
 def process_submission(submission):
     title = submission.title.strip()
     for top_level_comment in submission.comments:
-        if top_level_comment.body == "[deleted]":
+        if re.search('deleted|I am a bot', top_level_comment.body):
             continue
         else:
             comment = " ".join(top_level_comment.body.split())
