@@ -40,7 +40,7 @@ def process_submission(submission):
             comment = " ".join(top_level_comment.body.split())
             print("Title:", title)
             print("    -:", comment)
-            prompt = "write a short slightly cynical yet reassuring reply in less than 30 words to the comment '{}' in the " \
+            prompt = "write a short slightly cynical reply in less than 30 words with one sentence to the comment '{}' in the " \
                      "context of the title '{}' without using the words 'Oh', " \
                      "'Wow', " \
                      "and 'Great'".format(comment, title)
