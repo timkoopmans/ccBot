@@ -30,10 +30,11 @@ def main():
                 sleep(randint(700, 800))
                 # sleep(randint(3, 9))
 
-
 def process_submission(submission):
     title = submission.title.strip()
     for top_level_comment in submission.comments:
+        if top_level_comment.stickied or top_level_comment.author.is_mod:
+            continue
         if re.search('deleted|I am a bot', top_level_comment.body):
             continue
         else:
