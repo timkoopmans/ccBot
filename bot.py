@@ -35,7 +35,7 @@ def process_submission(submission):
     for top_level_comment in submission.comments:
         if top_level_comment.stickied or top_level_comment.author.is_mod:
             continue
-        if re.search('deleted|I am a bot', top_level_comment.body):
+        if re.search('deleted|I am a bot|GPT|chatGPT|gpt', top_level_comment.body):
             continue
         else:
             comment = " ".join(top_level_comment.body.split())
