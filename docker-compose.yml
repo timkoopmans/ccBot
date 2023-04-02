@@ -6,6 +6,15 @@ services:
       - OPENAI_API_KEY
       - TZ
       - PYTHONUNBUFFERED
+      - REDIS_HOST
+      - REDIS_PORT
     volumes:
       - ${PWD}/posts_replied_to.txt:/code/posts_replied_to.txt
     image: timkoopmans/ccbot
+  redis:
+    image: redis:alpine
+    volumes:
+      - ${PWD}/data:/data
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes

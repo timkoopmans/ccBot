@@ -17,9 +17,12 @@ spec:
           value: Australia/Melbourne
         - name: PYTHONUNBUFFERED
           value: "1"
-      volumeMounts:
-        - name: ccbot-storage
-          mountPath: /data
-  volumes:
-    - name: ccbot-storage
-      emptyDir: { }
+        - name: REDIS_HOST
+          value: latest-redis-master.default.svc.cluster.local
+        - name: REDIS_PORT
+          value: "6379"
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: latest-redis
+              key: redis-password

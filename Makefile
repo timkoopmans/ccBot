@@ -13,5 +13,5 @@ build:
 deploy:
 	kubectl apply -f ccbot.yaml
 
-restart:
+replace:
 	kubectl get pod ccbot -o yaml | kubectl replace --force -f -

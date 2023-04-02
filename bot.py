@@ -6,16 +6,17 @@ from time import sleep
 
 import openai
 import praw as praw
+import redis
+
+import paris
+
+logger = paris.logger
 
 
 def main():
-    if not os.path.isfile("posts_replied_to.txt"):
-        posts_replied_to = []
-    else:
-        with open("posts_replied_to.txt", "r") as f:
-            posts_replied_to = f.read()
-            posts_replied_to = posts_replied_to.split("\n")
-            posts_replied_to = list(filter(None, posts_replied_to))
+    r = redis.Redis(host=os.environ.get("REDIS_HOST"), port=os.environ.get("REDIS_PORT"), db=0,
+                    password=os.environ.get("REDIS_PASSWORD"))
+
     reddit = praw.Reddit("cc")
     subreddit = reddit.subreddit("CryptoCurrency")
     for submission in subreddit.stream.submissions():
@@ -23,12 +24,20 @@ def main():
         start = datetime.time(13)
         end = datetime.time(23)
         if start <= timestamp <= end:
-            if submission.id not in posts_replied_to:
+            if r.exists(submission.id):
+                logger.warning("Submission already processed")
+                continue
+            elif re.search('safemoon', submission.title):
+                logger.warning("Submission has banned words")
+                continue
+            else:
+                r.set(submission.id, 1)
                 process_submission(submission)
-                with open("posts_replied_to.txt", "a") as f:
-                    f.write(submission.id + "\n")
                 sleep(randint(700, 800))
-                # sleep(randint(3, 9))
+        else:
+            logger.info("Outside of processing window")
+            sleep(randint(700, 800))
+
 
 def process_submission(submission):
     title = submission.title.strip()
@@ -39,22 +48,34 @@ def process_submission(submission):
             continue
         else:
             comment = " ".join(top_level_comment.body.split())
-            print("Title:", title)
-            print("    -:", comment)
+            logger.info("  > %s", title)
+            logger.info(" >> %s", comment)
             prompt = "write a short slightly cynical reply in less than 30 words with one sentence to the comment '{}' in the " \
                      "context of the title '{}' without using the words 'Oh', " \
                      "'Wow', " \
                      "and 'Great'".format(comment, title)
-            completion = openai.ChatCompletion.create(model="gpt-3.5-turbo",
-                                                      messages=[{"role": "user", "content": prompt}])
-            reply = completion.choices[0].message.content.replace('"', '').strip()
-            if re.search('AI|language model', reply):
-                print("Reply leaks AI usage")
+
+            try:
+                completion = openai.ChatCompletion.create(model="gpt-3.5-turbo",
+                                                          messages=[{"role": "user", "content": prompt}])
+            except Exception as error:
+                logger.error(error)
                 return
-            print("   --:", reply)
-            print()
-            top_level_comment.reply(reply)
-            break
+
+            if not completion.choices:
+                logger.warning("No reply found")
+                return
+            else:
+                reply = completion.choices[0].message.content.replace('"', '').strip()
+                if re.search('AI|language model', reply):
+                    logger.warning("Reply leaks AI usage")
+                    return
+                elif re.search('Oh|Wow|Great|Sherlock', reply):
+                    logger.warning("Reply has banned words")
+                    return
+                logger.info(">>> %s", reply)
+                top_level_comment.reply(reply)
+                break
 
 
 if __name__ == "__main__":
