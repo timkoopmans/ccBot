@@ -9,6 +9,8 @@ _ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
 build:
 	docker compose build
+	kind load docker-image timkoopmans/ccbot:latest --name home
+
 
 deploy:
 	kubectl apply -f ccbot.yaml
