@@ -50,6 +50,9 @@ def main():
                 if r.exists(submission.id):
                     logger.warning("Submission already processed")
                     continue
+                elif submission.link_flair_text in ["Comedy", "Advice"]:
+                    logger.warning("Submission has banned flair")
+                    continue
                 elif re.search('safemoon', submission.title):
                     logger.warning("Submission has banned words")
                     continue
