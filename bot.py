@@ -7,36 +7,59 @@ from time import sleep
 import openai
 import praw as praw
 import redis
+import fakeredis
 
 import paris
 
 logger = paris.logger
 
+REDIS_HOST = os.environ.get("REDIS_HOST")
+REDIS_PORT = os.environ.get("REDIS_PORT")
+REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD")
+DEBUG = os.environ.get("DEBUG", False)
+
 
 def main():
-    r = redis.Redis(host=os.environ.get("REDIS_HOST"), port=os.environ.get("REDIS_PORT"), db=0,
-                    password=os.environ.get("REDIS_PASSWORD"))
+    if DEBUG:
+        logger.info("Debug mode enabled")
+        r = fakeredis.FakeStrictRedis(version=7)
+    else:
+        r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0, password=REDIS_PASSWORD)
 
     reddit = praw.Reddit("cc")
     subreddit = reddit.subreddit("CryptoCurrency")
+
+    me = reddit.user.me()
+    for comment in me.comments.new(limit=None):
+        if comment.created_utc < datetime.datetime.utcnow().timestamp() - 24*60*60:
+            break
+        if comment.score <= 0:
+            logger.info(f'Deleting comment with score {comment.score}: {comment.body[:60]}...')
+            comment.delete()
+
     for submission in subreddit.stream.submissions():
         timestamp = datetime.datetime.now().time()
         start = datetime.time(13)
         end = datetime.time(23)
-        if start <= timestamp <= end:
-            if r.exists(submission.id):
-                logger.warning("Submission already processed")
-                continue
-            elif re.search('safemoon', submission.title):
-                logger.warning("Submission has banned words")
-                continue
-            else:
-                r.set(submission.id, 1)
-                process_submission(submission)
-                sleep(randint(700, 800))
+        if DEBUG:
+            logger.info("Processing submission")
+            process_submission(submission)
+            sleep(randint(5, 10))
         else:
-            logger.info("Outside of processing window")
-            sleep(randint(700, 800))
+            if start <= timestamp <= end:
+                if r.exists(submission.id):
+                    logger.warning("Submission already processed")
+                    continue
+                elif re.search('safemoon', submission.title):
+                    logger.warning("Submission has banned words")
+                    continue
+                else:
+                    r.set(submission.id, 1)
+                    process_submission(submission)
+                    sleep(randint(500, 600))
+            else:
+                logger.info("Outside of processing window")
+                sleep(randint(500, 600))
 
 
 def process_submission(submission):
@@ -50,10 +73,14 @@ def process_submission(submission):
             comment = " ".join(top_level_comment.body.split())
             logger.info("  > %s", title)
             logger.info(" >> %s", comment)
-            prompt = "write a short slightly cynical reply in less than 30 words with one sentence to the comment '{}' in the " \
-                     "context of the title '{}' without using the words 'Oh', " \
-                     "'Wow', " \
-                     "and 'Great'".format(comment, title)
+            prompt = "Write a short reply in less than 30 words " \
+                     "with one sentence to the comment '{}' in the " \
+                     "context of the title '{}'. " \
+                     "Do not be overly negative. Try to be humorous and cynical." \
+                     "Do not start sentences with 'Oh', 'Wow', 'Great', and 'Well'." \
+                     "Do not use proper punctuation." \
+                     "Do not be sarcastic with words like 'Sherlock'." \
+                     "Be conversational".format(comment, title)
 
             try:
                 completion = openai.ChatCompletion.create(model="gpt-3.5-turbo",
@@ -74,7 +101,10 @@ def process_submission(submission):
                     logger.warning("Reply has banned words")
                     return
                 logger.info(">>> %s", reply)
-                top_level_comment.reply(reply)
+                if DEBUG:
+                    logger.info("Skipping reply")
+                else:
+                    top_level_comment.reply(reply)
                 break
 
 
