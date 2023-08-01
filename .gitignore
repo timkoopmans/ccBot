@@ -3,4 +3,5 @@
 /kube/dashboard.yml
 /posts_replied_to.txt
 /praw.ini
+.idea
 __pycache__/
